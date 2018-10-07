@@ -14,9 +14,9 @@ class Orders extends Component {
   }
 }
 
-const mapStateToProps = ({orders}) => {
+const mapStateToProps = ({ordersReducer}) => {
   return {
-    orders
+    orders: ordersReducer.orders
   }
 }
 

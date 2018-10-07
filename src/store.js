@@ -1,12 +1,13 @@
 import { createStore, applyMiddleware, combineReducers } from 'redux'
 import { logger } from 'redux-logger'
-import thunks from 'redux-thunk'
+import thunk from 'redux-thunk'
 import axios from 'axios'
 
 // action types
 
 const GET_PRODUCTS = 'GET_PRODUCTS'
 const GET_ORDERS = 'GET_ORDERS'
+const START_ORDER = 'START_ORDER'
 
 
 // action creators
@@ -16,6 +17,8 @@ const GET_ORDERS = 'GET_ORDERS'
 const _loadProducts = (products) => ({ type: GET_PRODUCTS, products })
 
 const _loadOrders = (orders) => ({ type: GET_ORDERS, orders })
+
+export const startOrder = () => ({ type: START_ORDER})
 
 
 // thunks
@@ -50,26 +53,34 @@ export const loadOrders = () => {
 
 // reducers
 
-const products = (store = [], action) => {
+const products = (state = [], action) => {
   switch(action.type) {
     case GET_PRODUCTS:
       return action.products
     default:
-      return store
+      return state
   }
 }
 
-const orders = (store = [], action) => {
+const initialOrdersState = {
+  orders: [],
+  order: {}
+}
+
+const ordersReducer = (state = initialOrdersState, action) => {
   switch(action.type) {
     case GET_ORDERS:
-      return action.orders
+      return {...state, orders: action.orders}
+    case START_ORDER:
+      const order = state.orders.filter(order => order.status === 'CART')[0]
+      return {...state, order }
     default:
-      return store
+      return state
   }
 }
 
-const reducer = combineReducers({products, orders})
+const reducer = combineReducers({products, ordersReducer})
 
-const store = createStore(reducer, applyMiddleware(logger, thunks))
+const store = createStore(reducer, applyMiddleware(logger, thunk))
 
 export default store

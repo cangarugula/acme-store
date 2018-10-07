@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
+import { startOrder } from './store'
 
 class Products extends Component {
 
@@ -8,11 +9,40 @@ class Products extends Component {
     this.state = {
       order: {}
     }
+    this.handleAdd = this.handleAdd.bind(this)
+    this.handleSubtract = this.handleSubtract.bind(this)
+  }
+
+  handleAdd(product) {
+    this.props.startOrder()
+    if(!this.state.order[product]){
+      this.setState({
+        order: {...this.state.order,
+          [product]: 1
+        }
+      })
+    } else {
+      this.setState({
+        order: {... this.state.order,
+          [product]: this.state.order[product] + 1
+        }
+      })
+    }
+  }
+
+  handleSubtract(product) {
+    if(this.state.order[product]){
+      this.setState({
+        order: {... this.state.order,
+          [product]: this.state.order[product] - 1
+        }
+      })
+    }
   }
 
   render() {
     const {order} = this.state
-
+    console.log(this.props.order)
     return (
       <div>
         <button>Reset</button>
@@ -27,8 +57,8 @@ class Products extends Component {
                 order[product.name] ? order[product.name] : 0
               } Ordered
               </div>
-              <button>+</button>
-              <button>-</button>
+              <button onClick={() => this.handleAdd(product.name)}>+</button>
+              <button disabled={!this.state.order[product.name] ? true : ''}onClick={() => this.handleSubtract(product.name)}>-</button>
             </div>
             )}
         </div>
@@ -38,10 +68,17 @@ class Products extends Component {
   }
 }
 
-const mapStateToProps = ({products}) => {
+const mapStateToProps = ({products,ordersReducer}) => {
   return {
-    products
+    products,
+    order: ordersReducer.order
   }
 }
 
-export default connect(mapStateToProps)(Products)
+const mapDispatchToProps = (dispatch) => {
+  return {
+    startOrder: () => dispatch(startOrder())
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Products)
