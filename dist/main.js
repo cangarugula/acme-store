@@ -40223,7 +40223,10 @@ var Main = function (_Component) {
                 var location = _ref.location;
                 return _react2.default.createElement(_Nav2.default, { path: location.pathname });
               } }),
-            _react2.default.createElement(_reactRouterDom.Route, { path: '/cart', component: _Products2.default }),
+            _react2.default.createElement(_reactRouterDom.Route, { path: '/cart', render: function render(_ref2) {
+                var history = _ref2.history;
+                return _react2.default.createElement(_Products2.default, { history: history });
+              } }),
             _react2.default.createElement(_reactRouterDom.Route, { path: '/orders', component: _Orders2.default })
           )
         )
@@ -40234,8 +40237,8 @@ var Main = function (_Component) {
   return Main;
 }(_react.Component);
 
-var mapStateToProps = function mapStateToProps(_ref2) {
-  var products = _ref2.products;
+var mapStateToProps = function mapStateToProps(_ref3) {
+  var products = _ref3.products;
 
   return {
     products: products
@@ -40268,6 +40271,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 
 var _react2 = _interopRequireDefault(_react);
@@ -40278,51 +40283,105 @@ var _reactRouterDom = __webpack_require__(/*! react-router-dom */ "./node_module
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var Nav = function Nav(_ref) {
-  var path = _ref.path;
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-  var selected = function selected(_path) {
-    var style = {};
-    if (_path === path) {
-      style.fontWeight = 'bold';
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var Nav = function (_Component) {
+  _inherits(Nav, _Component);
+
+  function Nav(props) {
+    _classCallCheck(this, Nav);
+
+    var _this = _possibleConstructorReturn(this, (Nav.__proto__ || Object.getPrototypeOf(Nav)).call(this, props));
+
+    _this.selected = _this.selected.bind(_this);
+    return _this;
+  }
+
+  _createClass(Nav, [{
+    key: 'selected',
+    value: function selected(_path) {
+      var style = {};
+      if (_path === this.props.path) {
+        style.fontWeight = 'bold';
+      }
+      return style;
     }
-    return style;
-  };
+  }, {
+    key: 'render',
+    value: function render() {
+      var selected = this.selected;
+      var _props = this.props,
+          cartCount = _props.cartCount,
+          orders = _props.orders;
 
-  return _react2.default.createElement(
-    'ul',
-    null,
-    _react2.default.createElement(
-      'li',
-      { style: selected('/') },
-      _react2.default.createElement(
-        _reactRouterDom.Link,
-        { to: '/' },
-        'Home'
-      )
-    ),
-    _react2.default.createElement(
-      'li',
-      { style: selected('/cart') },
-      _react2.default.createElement(
-        _reactRouterDom.Link,
-        { to: '/cart' },
-        'Cart ()'
-      )
-    ),
-    _react2.default.createElement(
-      'li',
-      { style: selected('/orders') },
-      _react2.default.createElement(
-        _reactRouterDom.Link,
-        { to: '/orders' },
-        'Orders ()'
-      )
-    )
-  );
+      return _react2.default.createElement(
+        'ul',
+        null,
+        _react2.default.createElement(
+          'li',
+          { style: selected('/') },
+          _react2.default.createElement(
+            _reactRouterDom.Link,
+            { to: '/' },
+            'Home'
+          )
+        ),
+        _react2.default.createElement(
+          'li',
+          { style: selected('/cart') },
+          _react2.default.createElement(
+            _reactRouterDom.Link,
+            { to: '/cart' },
+            'Cart (',
+            cartCount,
+            ')'
+          )
+        ),
+        _react2.default.createElement(
+          'li',
+          { style: selected('/orders') },
+          _react2.default.createElement(
+            _reactRouterDom.Link,
+            { to: '/orders' },
+            'Orders (',
+            orders.length ? orders.length : 0,
+            ')'
+          )
+        )
+      );
+    }
+  }]);
+
+  return Nav;
+}(_react.Component);
+
+;
+
+var mapStateToProps = function mapStateToProps(_ref) {
+  var orders = _ref.orders;
+
+  var cart = orders.filter(function (order) {
+    return order.status === 'CART';
+  })[0];
+  var count = 0;
+  if (cart) {
+    cart.lineItems.map(function (item) {
+      return count = count + item.quantity;
+    });
+  }
+  return {
+    cartCount: count,
+    orders: orders.filter(function (order) {
+      return order.status === 'ORDER';
+    })
+  };
 };
 
-exports.default = Nav;
+exports.default = (0, _reactRedux.connect)(mapStateToProps)(Nav);
 
 /***/ }),
 
@@ -40359,28 +40418,58 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Orders = function (_Component) {
   _inherits(Orders, _Component);
 
-  function Orders() {
+  function Orders(props) {
     _classCallCheck(this, Orders);
 
-    return _possibleConstructorReturn(this, (Orders.__proto__ || Object.getPrototypeOf(Orders)).apply(this, arguments));
+    var _this = _possibleConstructorReturn(this, (Orders.__proto__ || Object.getPrototypeOf(Orders)).call(this, props));
+
+    _this.state = {
+      loaded: false
+    };
+    return _this;
   }
 
   _createClass(Orders, [{
     key: 'render',
     value: function render() {
+      var _props = this.props,
+          orders = _props.orders,
+          products = _props.products;
+
       return _react2.default.createElement(
         'div',
         null,
+        _react2.default.createElement(
+          'button',
+          null,
+          'Reset'
+        ),
         _react2.default.createElement(
           'h3',
           null,
           'Orders'
         ),
-        this.props.orders.map(function (order) {
+        orders.map(function (order) {
           return _react2.default.createElement(
-            'li',
+            'div',
             { key: order.id },
-            order.id
+            order.id,
+            _react2.default.createElement(
+              'div',
+              null,
+              order.lineItems.map(function (item) {
+                var name = products.filter(function (product) {
+                  return product.id === item.productId;
+                })[0].name;
+                return _react2.default.createElement(
+                  'li',
+                  { key: item.id },
+                  name,
+                  ' ',
+                  item.quantity
+                );
+              })
+            )
           );
         })
       );
@@ -40391,10 +40480,14 @@ var Orders = function (_Component) {
 }(_react.Component);
 
 var mapStateToProps = function mapStateToProps(_ref) {
-  var ordersReducer = _ref.ordersReducer;
+  var orders = _ref.orders,
+      products = _ref.products;
 
   return {
-    orders: ordersReducer.orders
+    orders: orders.filter(function (order) {
+      return order.status === 'ORDER';
+    }),
+    products: products
   };
 };
 
@@ -40416,8 +40509,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
@@ -40429,8 +40520,6 @@ var _reactRedux = __webpack_require__(/*! react-redux */ "./node_modules/react-r
 var _store = __webpack_require__(/*! ./store */ "./src/store.js");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -40446,46 +40535,76 @@ var Products = function (_Component) {
 
     var _this = _possibleConstructorReturn(this, (Products.__proto__ || Object.getPrototypeOf(Products)).call(this, props));
 
-    _this.state = {
-      order: {}
-    };
     _this.handleAdd = _this.handleAdd.bind(_this);
     _this.handleSubtract = _this.handleSubtract.bind(_this);
+    _this.handleSubmit = _this.handleSubmit.bind(_this);
     return _this;
   }
 
   _createClass(Products, [{
     key: 'handleAdd',
     value: function handleAdd(product) {
-      this.props.startOrder();
-      if (!this.state.order[product]) {
-        this.setState({
-          order: _extends({}, this.state.order, _defineProperty({}, product, 1))
-        });
+      var _props = this.props,
+          order = _props.order,
+          addItem = _props.addItem,
+          updateItem = _props.updateItem;
+
+      var lineItem = order.lineItems.filter(function (item) {
+        return item.productId === product.id;
+      })[0];
+      var item = {
+        orderId: order.id,
+        productId: product.id
+      };
+      if (!lineItem) {
+        item.quantity = 1;
+        addItem(item);
       } else {
-        this.setState({
-          order: _extends({}, this.state.order, _defineProperty({}, product, this.state.order[product] + 1))
-        });
+        item.quantity = lineItem.quantity + 1;
+        item.id = lineItem.id;
+        updateItem(item);
       }
     }
   }, {
     key: 'handleSubtract',
     value: function handleSubtract(product) {
-      if (this.state.order[product]) {
-        this.setState({
-          order: _extends({}, this.state.order, _defineProperty({}, product, this.state.order[product] - 1))
+      var _props2 = this.props,
+          order = _props2.order,
+          deleteItem = _props2.deleteItem,
+          updateItem = _props2.updateItem;
+
+      var lineItem = order.lineItems.filter(function (item) {
+        return item.productId === product.id;
+      })[0];
+      if (lineItem.quantity === 1) {
+        deleteItem(lineItem);
+      } else {
+        updateItem({
+          id: lineItem.id,
+          orderId: order.id,
+          productId: product.id,
+          quantity: lineItem.quantity - 1
         });
       }
+    }
+  }, {
+    key: 'handleSubmit',
+    value: function handleSubmit(event) {
+      event.preventDefault();
+      this.props.createOrder(this.props.order);
+      this.props.history.push('/orders');
     }
   }, {
     key: 'render',
     value: function render() {
       var _this2 = this;
 
-      var order = this.state.order;
+      var _props3 = this.props,
+          products = _props3.products,
+          order = _props3.order;
 
-      console.log(this.props.order);
-      return _react2.default.createElement(
+
+      return order ? _react2.default.createElement(
         'div',
         null,
         _react2.default.createElement(
@@ -40501,7 +40620,7 @@ var Products = function (_Component) {
         _react2.default.createElement(
           'div',
           null,
-          this.props.products.map(function (product) {
+          products.map(function (product) {
             return _react2.default.createElement(
               'div',
               { key: product.id },
@@ -40509,20 +40628,27 @@ var Products = function (_Component) {
               _react2.default.createElement(
                 'div',
                 null,
-                order[product.name] ? order[product.name] : 0,
+                order.lineItems.filter(function (item) {
+                  return item.productId === product.id;
+                })[0] ? order.lineItems.filter(function (item) {
+                  return item.productId === product.id;
+                })[0].quantity : 0,
                 ' Ordered'
               ),
               _react2.default.createElement(
                 'button',
                 { onClick: function onClick() {
-                    return _this2.handleAdd(product.name);
+                    return _this2.handleAdd(product);
                   } },
                 '+'
               ),
               _react2.default.createElement(
                 'button',
-                { disabled: !_this2.state.order[product.name] ? true : '', onClick: function onClick() {
-                    return _this2.handleSubtract(product.name);
+                { disabled: order.lineItems.filter(function (item) {
+                    return item.productId === product.id;
+                  })[0] ? '' : true,
+                  onClick: function onClick() {
+                    return _this2.handleSubtract(product);
                   } },
                 '-'
               )
@@ -40531,9 +40657,13 @@ var Products = function (_Component) {
         ),
         _react2.default.createElement(
           'button',
-          null,
+          { onClick: this.handleSubmit },
           'Create Order'
         )
+      ) : _react2.default.createElement(
+        'div',
+        null,
+        'Loading...'
       );
     }
   }]);
@@ -40543,18 +40673,29 @@ var Products = function (_Component) {
 
 var mapStateToProps = function mapStateToProps(_ref) {
   var products = _ref.products,
-      ordersReducer = _ref.ordersReducer;
+      orders = _ref.orders;
 
   return {
     products: products,
-    order: ordersReducer.order
+    order: orders.filter(function (order) {
+      return order.status === 'CART';
+    })[0]
   };
 };
 
 var mapDispatchToProps = function mapDispatchToProps(dispatch) {
   return {
-    startOrder: function startOrder() {
-      return dispatch((0, _store.startOrder)());
+    addItem: function addItem(item) {
+      return dispatch((0, _store.addItem)(item));
+    },
+    deleteItem: function deleteItem(item) {
+      return dispatch((0, _store.deleteItem)(item));
+    },
+    updateItem: function updateItem(item) {
+      return dispatch((0, _store.updateItem)(item));
+    },
+    createOrder: function createOrder(order) {
+      return dispatch((0, _store.createOrder)(order));
     }
   };
 };
@@ -40615,7 +40756,7 @@ var app = document.getElementById('app');
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.loadOrders = exports.loadProducts = exports.initialLoad = exports.startOrder = undefined;
+exports.createOrder = exports.updateItem = exports.deleteItem = exports.addItem = exports.loadOrders = exports.loadProducts = exports.initialLoad = undefined;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -40633,13 +40774,19 @@ var _axios2 = _interopRequireDefault(_axios);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 // action types
 
 var GET_PRODUCTS = 'GET_PRODUCTS';
 var GET_ORDERS = 'GET_ORDERS';
-var START_ORDER = 'START_ORDER';
+var ADD_ITEM = 'ADD_ITEM';
+var DELETE_ITEM = 'DELETE_ITEM';
+var UPDATE_ITEM = 'UPDATE_ITEM';
+var CREATE_ORDER = 'CREATE_ORDER';
+var RESET = 'RESET';
 
 // action creators
 
@@ -40652,8 +40799,20 @@ var _loadOrders = function _loadOrders(orders) {
   return { type: GET_ORDERS, orders: orders };
 };
 
-var startOrder = exports.startOrder = function startOrder() {
-  return { type: START_ORDER };
+var _addItem = function _addItem(item) {
+  return { type: ADD_ITEM, item: item };
+};
+
+var _deleteItem = function _deleteItem(item) {
+  return { type: DELETE_ITEM, item: item };
+};
+
+var _updateItem = function _updateItem(item) {
+  return { type: UPDATE_ITEM, item: item };
+};
+
+var _createOrder = function _createOrder(order) {
+  return { type: CREATE_ORDER, order: order };
 };
 
 // thunks
@@ -40661,7 +40820,7 @@ var startOrder = exports.startOrder = function startOrder() {
 var initialLoad = exports.initialLoad = function initialLoad() {
   return function () {
     var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(dispatch) {
-      var _products, orders;
+      var _products, _orders;
 
       return regeneratorRuntime.wrap(function _callee$(_context) {
         while (1) {
@@ -40677,10 +40836,10 @@ var initialLoad = exports.initialLoad = function initialLoad() {
               return _axios2.default.get('/api/orders');
 
             case 6:
-              orders = _context.sent;
+              _orders = _context.sent;
 
               dispatch(_loadProducts(_products.data));
-              dispatch(_loadOrders(orders.data));
+              dispatch(_loadOrders(_orders.data));
               _context.next = 14;
               break;
 
@@ -40719,6 +40878,38 @@ var loadOrders = exports.loadOrders = function loadOrders() {
   };
 };
 
+var addItem = exports.addItem = function addItem(item) {
+  return function (dispatch) {
+    _axios2.default.post('/api/orders/' + item.orderId + '/lineItems', item).then(function (response) {
+      return dispatch(_addItem(response.data));
+    });
+  };
+};
+
+var deleteItem = exports.deleteItem = function deleteItem(item) {
+  return function (dispatch) {
+    _axios2.default.delete('/api/orders/' + item.orderId + '/lineItems/' + item.id).then(function () {
+      return dispatch(_deleteItem(item));
+    });
+  };
+};
+
+var updateItem = exports.updateItem = function updateItem(item) {
+  return function (dispatch) {
+    _axios2.default.put('/api/orders/' + item.orderId + '/lineItems/' + item.id, item).then(function (response) {
+      return dispatch(_updateItem(response.data));
+    });
+  };
+};
+
+var createOrder = exports.createOrder = function createOrder(order) {
+  return function (dispatch) {
+    _axios2.default.put('/api/orders/' + order.id, { status: 'ORDER' }).then(function (response) {
+      return dispatch(_createOrder(response.data));
+    });
+  };
+};
+
 // reducers
 
 var products = function products() {
@@ -40734,28 +40925,43 @@ var products = function products() {
 };
 
 var initialOrdersState = {
-  orders: [],
-  order: {}
+  orders: []
 };
 
-var ordersReducer = function ordersReducer() {
-  var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initialOrdersState;
+var orders = function orders() {
+  var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
   var action = arguments[1];
+
+  var cart = state.filter(function (order) {
+    return order.status === 'CART';
+  })[0];
+  var orders = state.filter(function (order) {
+    return order.status === 'ORDER';
+  });
 
   switch (action.type) {
     case GET_ORDERS:
-      return _extends({}, state, { orders: action.orders });
-    case START_ORDER:
-      var order = state.orders.filter(function (order) {
-        return order.status === 'CART';
-      })[0];
-      return _extends({}, state, { order: order });
+      return action.orders;
+    case ADD_ITEM:
+      return [].concat(_toConsumableArray(orders), [_extends({}, cart, { lineItems: [].concat(_toConsumableArray(cart.lineItems), [action.item]) })]);
+    case DELETE_ITEM:
+      var filtered = cart.lineItems.filter(function (item) {
+        return item.id !== action.item.id;
+      });
+      return [].concat(_toConsumableArray(orders), [_extends({}, cart, { lineItems: filtered })]);
+    case UPDATE_ITEM:
+      var lineItems = cart.lineItems.filter(function (item) {
+        return item.id !== action.item.id;
+      });
+      return [].concat(_toConsumableArray(orders), [_extends({}, cart, { lineItems: [].concat(_toConsumableArray(lineItems), [action.item]) })]);
+    case CREATE_ORDER:
+      return [].concat(_toConsumableArray(orders), [action.order]);
     default:
       return state;
   }
 };
 
-var reducer = (0, _redux.combineReducers)({ products: products, ordersReducer: ordersReducer });
+var reducer = (0, _redux.combineReducers)({ products: products, orders: orders });
 
 var store = (0, _redux.createStore)(reducer, (0, _redux.applyMiddleware)(_reduxLogger.logger, _reduxThunk2.default));
 

@@ -7,8 +7,11 @@ import axios from 'axios'
 
 const GET_PRODUCTS = 'GET_PRODUCTS'
 const GET_ORDERS = 'GET_ORDERS'
-const START_ORDER = 'START_ORDER'
-
+const ADD_ITEM = 'ADD_ITEM'
+const DELETE_ITEM = 'DELETE_ITEM'
+const UPDATE_ITEM = 'UPDATE_ITEM'
+const CREATE_ORDER = 'CREATE_ORDER'
+const RESET = 'RESET'
 
 // action creators
 
@@ -18,7 +21,13 @@ const _loadProducts = (products) => ({ type: GET_PRODUCTS, products })
 
 const _loadOrders = (orders) => ({ type: GET_ORDERS, orders })
 
-export const startOrder = () => ({ type: START_ORDER})
+const _addItem = (item) => ({ type: ADD_ITEM, item })
+
+const _deleteItem = (item) => ({ type: DELETE_ITEM, item })
+
+const _updateItem = (item) => ({ type: UPDATE_ITEM, item})
+
+const _createOrder = (order) => ({ type: CREATE_ORDER, order})
 
 
 // thunks
@@ -50,6 +59,33 @@ export const loadOrders = () => {
   }
 }
 
+export const addItem = (item) => {
+  return (dispatch) => {
+    axios.post(`/api/orders/${item.orderId}/lineItems`, item)
+    .then(response => dispatch(_addItem(response.data)))
+  }
+}
+
+export const deleteItem = (item) => {
+  return (dispatch) => {
+    axios.delete(`/api/orders/${item.orderId}/lineItems/${item.id}`)
+    .then(() => dispatch(_deleteItem(item)))
+  }
+}
+
+export const updateItem = (item) => {
+  return (dispatch) => {
+    axios.put(`/api/orders/${item.orderId}/lineItems/${item.id}`, item)
+    .then(response => dispatch(_updateItem(response.data)))
+  }
+}
+
+export const createOrder = (order) => {
+  return (dispatch) => {
+    axios.put(`/api/orders/${order.id}`, {status: 'ORDER'} )
+    .then(response => dispatch(_createOrder(response.data)))
+  }
+}
 
 // reducers
 
@@ -63,23 +99,32 @@ const products = (state = [], action) => {
 }
 
 const initialOrdersState = {
-  orders: [],
-  order: {}
+  orders: []
 }
 
-const ordersReducer = (state = initialOrdersState, action) => {
+const orders = (state = [], action) => {
+  let cart = state.filter(order => order.status === 'CART')[0]
+  let orders = state.filter(order => order.status === 'ORDER')
+
   switch(action.type) {
     case GET_ORDERS:
-      return {...state, orders: action.orders}
-    case START_ORDER:
-      const order = state.orders.filter(order => order.status === 'CART')[0]
-      return {...state, order }
+      return action.orders
+    case ADD_ITEM:
+      return [...orders, {...cart, lineItems: [...cart.lineItems, action.item]} ]
+    case DELETE_ITEM:
+      const filtered = cart.lineItems.filter(item => item.id !== action.item.id)
+      return [...orders, {...cart, lineItems: filtered }]
+    case UPDATE_ITEM:
+      const lineItems = cart.lineItems.filter(item => item.id !== action.item.id)
+      return [...orders, {...cart, lineItems: [...lineItems, action.item]}]
+    case CREATE_ORDER:
+      return [...orders, action.order]
     default:
       return state
   }
 }
 
-const reducer = combineReducers({products, ordersReducer})
+const reducer = combineReducers({products, orders})
 
 const store = createStore(reducer, applyMiddleware(logger, thunk))
 

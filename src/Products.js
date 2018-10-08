@@ -1,83 +1,100 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { startOrder } from './store'
+import { addItem, deleteItem, updateItem, createOrder } from './store'
 
 class Products extends Component {
 
   constructor(props) {
     super(props)
-    this.state = {
-      order: {}
-    }
     this.handleAdd = this.handleAdd.bind(this)
     this.handleSubtract = this.handleSubtract.bind(this)
+    this.handleSubmit = this.handleSubmit.bind(this)
   }
 
   handleAdd(product) {
-    this.props.startOrder()
-    if(!this.state.order[product]){
-      this.setState({
-        order: {...this.state.order,
-          [product]: 1
-        }
-      })
+    const {order, addItem,  updateItem} = this.props
+    const lineItem = order.lineItems.filter(item => item.productId === product.id)[0]
+    let item = {
+      orderId: order.id,
+      productId: product.id
+    }
+    if(!lineItem){
+      item.quantity = 1
+      addItem(item)
     } else {
-      this.setState({
-        order: {... this.state.order,
-          [product]: this.state.order[product] + 1
-        }
-      })
+      item.quantity = lineItem.quantity+1
+      item.id = lineItem.id
+      updateItem(item)
     }
   }
 
   handleSubtract(product) {
-    if(this.state.order[product]){
-      this.setState({
-        order: {... this.state.order,
-          [product]: this.state.order[product] - 1
-        }
+    const {order, deleteItem, updateItem} = this.props
+    const lineItem = order.lineItems.filter(item => item.productId === product.id)[0]
+    if(lineItem.quantity === 1){
+      deleteItem(lineItem)
+    } else {
+      updateItem({
+        id: lineItem.id,
+        orderId: order.id,
+        productId: product.id,
+        quantity: lineItem.quantity-1
       })
     }
   }
 
+  handleSubmit(event) {
+    event.preventDefault()
+    this.props.createOrder(this.props.order)
+    this.props.history.push('/orders')
+  }
+
   render() {
-    const {order} = this.state
-    console.log(this.props.order)
+    const {products, order} = this.props
+
     return (
+      order ?
       <div>
         <button>Reset</button>
         <h3>Products</h3>
         <div>
           {
-            this.props.products.map(product =>
+            products.map(product =>
             <div key={product.id}>
               {product.name}
               <div>
               {
-                order[product.name] ? order[product.name] : 0
+                order.lineItems.filter(item => item.productId === product.id)[0]
+                ? order.lineItems.filter(item => item.productId === product.id)[0].quantity
+                : 0
               } Ordered
               </div>
-              <button onClick={() => this.handleAdd(product.name)}>+</button>
-              <button disabled={!this.state.order[product.name] ? true : ''}onClick={() => this.handleSubtract(product.name)}>-</button>
+              <button onClick={() => this.handleAdd(product)} >+</button>
+              <button disabled={ order.lineItems.filter(item => item.productId === product.id)[0] ? '' : true }
+              onClick={() => this.handleSubtract(product)}>-</button>
             </div>
             )}
         </div>
-        <button>Create Order</button>
+        <button onClick={this.handleSubmit}>Create Order</button>
       </div>
+      : <div>Loading...</div>
     )
   }
 }
 
-const mapStateToProps = ({products,ordersReducer}) => {
+const mapStateToProps = ({products,orders}) => {
   return {
     products,
-    order: ordersReducer.order
+    order: orders.filter(order => order.status === 'CART')[0]
   }
 }
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    startOrder: () => dispatch(startOrder())
+    addItem: (item) => dispatch(addItem(item)),
+    deleteItem: (item) => dispatch(deleteItem(item)),
+    updateItem: (item) => dispatch(updateItem(item)),
+    createOrder: (order) => dispatch(createOrder(order))
   }
 }
 

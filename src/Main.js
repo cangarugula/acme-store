@@ -18,7 +18,7 @@ class Main extends Component{
         <Router>
           <div>
             <Route component={ ({ location })=> <Nav path={ location.pathname }/> } />
-            <Route path="/cart" component={Products}></Route>
+            <Route path="/cart" render={({history}) => <Products history={history} />}></Route>
             <Route path='/orders' component={Orders}></Route>
           </div>
         </Router>
