@@ -17,25 +17,43 @@ class Nav extends Component {
   }
   render() {
     const {selected} = this
-    const {cartCount, orders} = this.props
+    const {cartCount, orders, soldItems} = this.props
     return (
-      <ul>
-        <li style={selected('/')}><Link to='/'>Home</Link></li>
-        <li style={ selected('/cart')}><Link to='/cart'>Cart ({cartCount})</Link></li>
-        <li style={ selected('/orders')}><Link to='/orders'>Orders ({orders.length ? orders.length : 0})</Link></li>
-      </ul>
+        <div>
+          <ul className='nav nav-tabs'>
+            <li className='nav-item' style={selected('/')}><Link to='/' className='nav-link'>Home</Link></li>
+            <li className='nav-item' style={ selected('/cart')}><Link to='/cart' className='nav-link'>Cart ({cartCount})</Link></li>
+            <li className='nav-item' style={ selected('/orders')}><Link to='/orders' className='nav-link'>Orders ({orders.length ? orders.length : 0})</Link></li>
+          </ul>
+          <div className='container'>
+            <div className='panel panel-success'>
+              <div className='panel-heading'>
+                {soldItems} sold!
+              </div>
+            </div>
+            <button className='btn btn-warning'>Reset</button>
+          </div>
+        </div>
+
     )}
 
 };
 
 const mapStateToProps = ({orders}) => {
   const cart = orders.filter(order => order.status === 'CART')[0]
-  let count = 0
+  let cartCount = 0
   if(cart) {
-    cart.lineItems.map(item => count = count + item.quantity)
+    cart.lineItems.map(item => cartCount = cartCount + item.quantity)
   }
+  let soldItems = 0
+  orders.map(order => {
+    if(order.status === 'ORDER') {
+      order.lineItems.map(item => soldItems = soldItems + item.quantity)
+    }
+  })
   return {
-    cartCount: count,
+    cartCount,
+    soldItems,
     orders: orders.filter(order => order.status === 'ORDER')
   }
 }

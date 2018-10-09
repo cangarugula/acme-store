@@ -14,7 +14,8 @@ class Main extends Component{
 
   render(){
     return (
-      <div>
+      <div className='container'>
+        <h1 >Acme Store</h1>
         <Router>
           <div>
             <Route component={ ({ location })=> <Nav path={ location.pathname }/> } />

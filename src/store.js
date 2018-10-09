@@ -17,9 +17,9 @@ const RESET = 'RESET'
 
 
 
-const _loadProducts = (products) => ({ type: GET_PRODUCTS, products })
+const _getProducts = (products) => ({ type: GET_PRODUCTS, products })
 
-const _loadOrders = (orders) => ({ type: GET_ORDERS, orders })
+const _getOrders = (orders) => ({ type: GET_ORDERS, orders })
 
 const _addItem = (item) => ({ type: ADD_ITEM, item })
 
@@ -37,25 +37,25 @@ export const initialLoad = () => {
     try {
       let products = await axios.get('/api/products')
       let orders = await axios.get('/api/orders')
-      dispatch(_loadProducts(products.data))
-      dispatch(_loadOrders(orders.data))
+      dispatch(_getProducts(products.data))
+      dispatch(_getOrders(orders.data))
     } catch (err) {
       throw err
     }
   }
 }
 
-export const loadProducts = () => {
+export const getProducts = () => {
   return (dispatch) => {
     axios.get('/api/products')
-    .then(response => dispatch(_loadProducts(response.data)))
+    .then(response => dispatch(_getProducts(response.data)))
   }
 }
 
-export const loadOrders = () => {
+export const getOrders = () => {
   return (dispatch) => {
     axios.get('/api/orders')
-    .then(response => dispatch(_loadOrders(response.data)))
+    .then(response => dispatch(_getOrders(response.data)))
   }
 }
 
@@ -82,8 +82,8 @@ export const updateItem = (item) => {
 
 export const createOrder = (order) => {
   return (dispatch) => {
-    axios.put(`/api/orders/${order.id}`, {status: 'ORDER'} )
-    .then(response => dispatch(_createOrder(response.data)))
+    return axios.put(`/api/orders/${order.id}`, {status: 'ORDER'} )
+    .then(() => dispatch(_createOrder({...order, status: 'ORDER'})))
   }
 }
 
@@ -98,9 +98,6 @@ const products = (state = [], action) => {
   }
 }
 
-const initialOrdersState = {
-  orders: []
-}
 
 const orders = (state = [], action) => {
   let cart = state.filter(order => order.status === 'CART')[0]

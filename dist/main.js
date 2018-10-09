@@ -40212,7 +40212,12 @@ var Main = function (_Component) {
     value: function render() {
       return _react2.default.createElement(
         'div',
-        null,
+        { className: 'container' },
+        _react2.default.createElement(
+          'h1',
+          null,
+          'Acme Store'
+        ),
         _react2.default.createElement(
           _reactRouterDom.HashRouter,
           null,
@@ -40316,40 +40321,64 @@ var Nav = function (_Component) {
       var selected = this.selected;
       var _props = this.props,
           cartCount = _props.cartCount,
-          orders = _props.orders;
+          orders = _props.orders,
+          soldItems = _props.soldItems;
 
       return _react2.default.createElement(
-        'ul',
+        'div',
         null,
         _react2.default.createElement(
-          'li',
-          { style: selected('/') },
+          'ul',
+          { className: 'nav nav-tabs' },
           _react2.default.createElement(
-            _reactRouterDom.Link,
-            { to: '/' },
-            'Home'
+            'li',
+            { className: 'nav-item', style: selected('/') },
+            _react2.default.createElement(
+              _reactRouterDom.Link,
+              { to: '/', className: 'nav-link' },
+              'Home'
+            )
+          ),
+          _react2.default.createElement(
+            'li',
+            { className: 'nav-item', style: selected('/cart') },
+            _react2.default.createElement(
+              _reactRouterDom.Link,
+              { to: '/cart', className: 'nav-link' },
+              'Cart (',
+              cartCount,
+              ')'
+            )
+          ),
+          _react2.default.createElement(
+            'li',
+            { className: 'nav-item', style: selected('/orders') },
+            _react2.default.createElement(
+              _reactRouterDom.Link,
+              { to: '/orders', className: 'nav-link' },
+              'Orders (',
+              orders.length ? orders.length : 0,
+              ')'
+            )
           )
         ),
         _react2.default.createElement(
-          'li',
-          { style: selected('/cart') },
+          'div',
+          { className: 'container' },
           _react2.default.createElement(
-            _reactRouterDom.Link,
-            { to: '/cart' },
-            'Cart (',
-            cartCount,
-            ')'
-          )
-        ),
-        _react2.default.createElement(
-          'li',
-          { style: selected('/orders') },
+            'div',
+            { className: 'panel panel-success' },
+            _react2.default.createElement(
+              'div',
+              { className: 'panel-heading' },
+              soldItems,
+              ' sold!'
+            )
+          ),
           _react2.default.createElement(
-            _reactRouterDom.Link,
-            { to: '/orders' },
-            'Orders (',
-            orders.length ? orders.length : 0,
-            ')'
+            'button',
+            { className: 'btn btn-warning' },
+            'Reset'
           )
         )
       );
@@ -40367,14 +40396,23 @@ var mapStateToProps = function mapStateToProps(_ref) {
   var cart = orders.filter(function (order) {
     return order.status === 'CART';
   })[0];
-  var count = 0;
+  var cartCount = 0;
   if (cart) {
     cart.lineItems.map(function (item) {
-      return count = count + item.quantity;
+      return cartCount = cartCount + item.quantity;
     });
   }
+  var soldItems = 0;
+  orders.map(function (order) {
+    if (order.status === 'ORDER') {
+      order.lineItems.map(function (item) {
+        return soldItems = soldItems + item.quantity;
+      });
+    }
+  });
   return {
-    cartCount: count,
+    cartCount: cartCount,
+    soldItems: soldItems,
     orders: orders.filter(function (order) {
       return order.status === 'ORDER';
     })
@@ -40430,6 +40468,15 @@ var Orders = function (_Component) {
   }
 
   _createClass(Orders, [{
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate(prevProps) {
+      if (this.props !== prevProps) {
+        this.setState({
+          loaded: !this.state.loaded
+        });
+      }
+    }
+  }, {
     key: 'render',
     value: function render() {
       var _props = this.props,
@@ -40438,40 +40485,44 @@ var Orders = function (_Component) {
 
       return _react2.default.createElement(
         'div',
-        null,
-        _react2.default.createElement(
-          'button',
-          null,
-          'Reset'
-        ),
+        { className: 'container' },
         _react2.default.createElement(
           'h3',
           null,
           'Orders'
         ),
-        orders.map(function (order) {
-          return _react2.default.createElement(
-            'div',
-            { key: order.id },
-            order.id,
-            _react2.default.createElement(
+        _react2.default.createElement(
+          'div',
+          { className: 'list-group' },
+          orders.map(function (order) {
+            return _react2.default.createElement(
               'div',
-              null,
-              order.lineItems.map(function (item) {
-                var name = products.filter(function (product) {
-                  return product.id === item.productId;
-                })[0].name;
-                return _react2.default.createElement(
-                  'li',
-                  { key: item.id },
-                  name,
-                  ' ',
-                  item.quantity
-                );
-              })
-            )
-          );
-        })
+              { key: order.id, className: 'list-group-item' },
+              '#',
+              order.id,
+              _react2.default.createElement(
+                'div',
+                null,
+                order.lineItems.map(function (item) {
+                  var name = products.filter(function (product) {
+                    return product.id === item.productId;
+                  })[0].name;
+                  return _react2.default.createElement(
+                    'li',
+                    { className: 'list-group-item', key: item.id },
+                    name,
+                    ' ',
+                    _react2.default.createElement(
+                      'span',
+                      { className: 'badge' },
+                      item.quantity
+                    )
+                  );
+                })
+              )
+            );
+          })
+        )
       );
     }
   }]);
@@ -40590,28 +40641,26 @@ var Products = function (_Component) {
   }, {
     key: 'handleSubmit',
     value: function handleSubmit(event) {
+      var _this2 = this;
+
       event.preventDefault();
-      this.props.createOrder(this.props.order);
+      this.props.createOrder(this.props.order).then(function () {
+        return _this2.props.getOrders();
+      });
       this.props.history.push('/orders');
     }
   }, {
     key: 'render',
     value: function render() {
-      var _this2 = this;
+      var _this3 = this;
 
       var _props3 = this.props,
           products = _props3.products,
           order = _props3.order;
 
-
       return order ? _react2.default.createElement(
         'div',
-        null,
-        _react2.default.createElement(
-          'button',
-          null,
-          'Reset'
-        ),
+        { className: 'container' },
         _react2.default.createElement(
           'h3',
           null,
@@ -40619,11 +40668,11 @@ var Products = function (_Component) {
         ),
         _react2.default.createElement(
           'div',
-          null,
+          { className: 'container row' },
           products.map(function (product) {
             return _react2.default.createElement(
               'div',
-              { key: product.id },
+              { key: product.id, className: 'col-sm-4' },
               product.name,
               _react2.default.createElement(
                 'div',
@@ -40636,29 +40685,37 @@ var Products = function (_Component) {
                 ' Ordered'
               ),
               _react2.default.createElement(
-                'button',
-                { onClick: function onClick() {
-                    return _this2.handleAdd(product);
-                  } },
-                '+'
-              ),
-              _react2.default.createElement(
-                'button',
-                { disabled: order.lineItems.filter(function (item) {
-                    return item.productId === product.id;
-                  })[0] ? '' : true,
-                  onClick: function onClick() {
-                    return _this2.handleSubtract(product);
-                  } },
-                '-'
+                'div',
+                null,
+                _react2.default.createElement(
+                  'button',
+                  { className: 'btn btn-primary btn-sm', onClick: function onClick() {
+                      return _this3.handleAdd(product);
+                    } },
+                  '+'
+                ),
+                _react2.default.createElement(
+                  'button',
+                  { className: 'btn btn-primary btn-sm', disabled: order.lineItems.filter(function (item) {
+                      return item.productId === product.id;
+                    })[0] ? '' : true,
+                    onClick: function onClick() {
+                      return _this3.handleSubtract(product);
+                    } },
+                  '-'
+                )
               )
             );
           })
         ),
         _react2.default.createElement(
-          'button',
-          { onClick: this.handleSubmit },
-          'Create Order'
+          'div',
+          { className: 'btn' },
+          _react2.default.createElement(
+            'button',
+            { className: 'btn btn-primary', disabled: order.lineItems.length ? '' : true, onClick: this.handleSubmit },
+            'Create Order'
+          )
         )
       ) : _react2.default.createElement(
         'div',
@@ -40696,6 +40753,9 @@ var mapDispatchToProps = function mapDispatchToProps(dispatch) {
     },
     createOrder: function createOrder(order) {
       return dispatch((0, _store.createOrder)(order));
+    },
+    getOrders: function getOrders() {
+      return dispatch((0, _store.getOrders)());
     }
   };
 };
@@ -40756,7 +40816,7 @@ var app = document.getElementById('app');
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.createOrder = exports.updateItem = exports.deleteItem = exports.addItem = exports.loadOrders = exports.loadProducts = exports.initialLoad = undefined;
+exports.createOrder = exports.updateItem = exports.deleteItem = exports.addItem = exports.getOrders = exports.getProducts = exports.initialLoad = undefined;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -40791,11 +40851,11 @@ var RESET = 'RESET';
 // action creators
 
 
-var _loadProducts = function _loadProducts(products) {
+var _getProducts = function _getProducts(products) {
   return { type: GET_PRODUCTS, products: products };
 };
 
-var _loadOrders = function _loadOrders(orders) {
+var _getOrders = function _getOrders(orders) {
   return { type: GET_ORDERS, orders: orders };
 };
 
@@ -40838,8 +40898,8 @@ var initialLoad = exports.initialLoad = function initialLoad() {
             case 6:
               _orders = _context.sent;
 
-              dispatch(_loadProducts(_products.data));
-              dispatch(_loadOrders(_orders.data));
+              dispatch(_getProducts(_products.data));
+              dispatch(_getOrders(_orders.data));
               _context.next = 14;
               break;
 
@@ -40862,18 +40922,18 @@ var initialLoad = exports.initialLoad = function initialLoad() {
   }();
 };
 
-var loadProducts = exports.loadProducts = function loadProducts() {
+var getProducts = exports.getProducts = function getProducts() {
   return function (dispatch) {
     _axios2.default.get('/api/products').then(function (response) {
-      return dispatch(_loadProducts(response.data));
+      return dispatch(_getProducts(response.data));
     });
   };
 };
 
-var loadOrders = exports.loadOrders = function loadOrders() {
+var getOrders = exports.getOrders = function getOrders() {
   return function (dispatch) {
     _axios2.default.get('/api/orders').then(function (response) {
-      return dispatch(_loadOrders(response.data));
+      return dispatch(_getOrders(response.data));
     });
   };
 };
@@ -40904,8 +40964,8 @@ var updateItem = exports.updateItem = function updateItem(item) {
 
 var createOrder = exports.createOrder = function createOrder(order) {
   return function (dispatch) {
-    _axios2.default.put('/api/orders/' + order.id, { status: 'ORDER' }).then(function (response) {
-      return dispatch(_createOrder(response.data));
+    return _axios2.default.put('/api/orders/' + order.id, { status: 'ORDER' }).then(function () {
+      return dispatch(_createOrder(_extends({}, order, { status: 'ORDER' })));
     });
   };
 };
@@ -40922,10 +40982,6 @@ var products = function products() {
     default:
       return state;
   }
-};
-
-var initialOrdersState = {
-  orders: []
 };
 
 var orders = function orders() {
