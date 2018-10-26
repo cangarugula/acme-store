@@ -9,6 +9,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "express": "^4.16.3",
+    "jwt-simple": "^0.5.5",
     "pg": "^7.4.3",
     "react": "^16.5.0",
     "react-dom": "^16.5.0",
@@ -40,6 +41,6 @@
     "webpack": "./node_modules/webpack/bin/webpack.js",
     "build": "npm run webpack -- --watch --mode=development",
     "start": "node server/index.js",
-    "start:dev": "npm run build & DATABASE_URL=postgres://localhost/my_db nodemon server/index.js --ignore dist --ignore src"
+    "start:dev": "npm run build & JWT_SECRET='cang' DATABASE_URL=postgres://localhost/my_db nodemon server/index.js --ignore dist --ignore src"
   }
 }

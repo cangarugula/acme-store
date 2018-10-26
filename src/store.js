@@ -11,7 +11,7 @@ const ADD_ITEM = 'ADD_ITEM'
 const DELETE_ITEM = 'DELETE_ITEM'
 const UPDATE_ITEM = 'UPDATE_ITEM'
 const CREATE_ORDER = 'CREATE_ORDER'
-const RESET = 'RESET'
+const SET_AUTH = 'SET_AUTH'
 
 // action creators
 
@@ -28,6 +28,8 @@ const _deleteItem = (item) => ({ type: DELETE_ITEM, item })
 const _updateItem = (item) => ({ type: UPDATE_ITEM, item})
 
 const _createOrder = (order) => ({ type: CREATE_ORDER, order})
+
+const _setAuth = (user) => ({ type: SET_AUTH, user})
 
 
 // thunks
@@ -87,12 +89,69 @@ export const createOrder = (order) => {
   }
 }
 
+export const reset = () => {
+  return (dispatch) => {
+    axios.post('/reset')
+    .then(()=> {
+      return axios.get('/api/orders')
+      .then(response => dispatch(_getOrders(response.data)))
+    })
+  }
+}
+
+export const exchangeTokenForAuth = (history) => {
+  return (dispatch) => {
+    const token = window.localStorage.getItem('token')
+    if(!token) {
+      return
+    }
+    return axios.get('/api/auth', {
+      headers: {
+        authorization: token
+      }
+    })
+    .then(response => response.data)
+    .then(auth => {
+      dispatch(_setAuth(auth))
+      if(history) {
+        history.push('/cart')
+      }
+    })
+    console.log('authorized')
+    .catch(ex => window.localStorage.removeItem('token'))
+  }
+}
+
+export const logout = () => {
+  window.localStorage.removeItem('token')
+  return _setAuth({})
+}
+
+export const login = (credentials,history) => {
+  return (dispatch) => {
+    return axios.post('/api/auth', credentials)
+    .then(response => {
+      window.localStorage.setItem('token', response.data.token)
+      dispatch(exchangeTokenForAuth(history))
+    })
+  }
+}
+
 // reducers
 
 const products = (state = [], action) => {
   switch(action.type) {
     case GET_PRODUCTS:
       return action.products
+    default:
+      return state
+  }
+}
+
+const user = (state = {}, action) => {
+  switch(action.type) {
+    case SET_AUTH:
+      return action.user
     default:
       return state
   }
@@ -121,7 +180,7 @@ const orders = (state = [], action) => {
   }
 }
 
-const reducer = combineReducers({products, orders})
+const reducer = combineReducers({products, orders, user})
 
 const store = createStore(reducer, applyMiddleware(logger, thunk))
 

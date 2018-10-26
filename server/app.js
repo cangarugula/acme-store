@@ -1,8 +1,8 @@
 const path = require('path');
 const express = require('express');
 const db = require('./db');
-const { Product, Order, LineItem } = db.models;
-
+const { Product, Order, LineItem, User } = db.models;
+const jwt = require('jwt-simple')
 
 const app = express();
 
@@ -12,6 +12,26 @@ app.use(require('body-parser').json());
 
 
 app.use('/dist', express.static(path.join(__dirname, '../dist')));
+
+app.use((req, res, next) => {
+  const token = req.headers.authorization
+  if(!token) {
+    return next()
+  }
+  let id;
+  try {
+    id = jwt.decode(token, process.env.JWT_SECRET).id;
+  } catch(err) {
+    return next({status: 401})
+  }
+
+  User.findById(id)
+  .then(user => {
+    req.user = user
+    next()
+  })
+  .catch(next)
+})
 
 const index = path.join(__dirname, '../index.html');
 
@@ -43,6 +63,41 @@ app.get('/api/orders', async (req, res, next)=> {
   }
 });
 
+app.get('/api/users', (req, res, next) => {
+  User.findAll()
+  .then(users => res.send(users))
+  .catch(next)
+})
+
+app.get('/api/auth', (req, res, next) => {
+  if(!req.user) {
+    return next({status: 401})
+  }
+  res.send(req.user)
+})
+
+app.post('/api/auth', (req, res, next) => {
+  const { name, password } = req.body
+  User.findOne({
+    where: {
+      name, password
+    }
+  })
+  .then(user => {
+    if(!user) {
+      return next({status: 401})
+    }
+    const token = jwt.encode({id: user.id}, process.env.JWT_SECRET)
+    res.send({token})
+  })
+  .then(next)
+})
+
+app.post('/reset',(req, res, next) => {
+  return db.syncAndSeed()
+  .then(() => res.sendStatus(200))
+  .catch(next)
+})
 
 //update line item
 app.put('/api/orders/:orderId/lineItems/:id', (req, res, next)=> {

@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { reset } from './store'
 
 class Nav extends Component {
   constructor(props) {
@@ -17,13 +18,17 @@ class Nav extends Component {
   }
   render() {
     const {selected} = this
-    const {cartCount, orders, soldItems} = this.props
+    const {cartCount, orders, soldItems, reset} = this.props
     return (
         <div>
           <ul className='nav nav-tabs'>
             <li className='nav-item' style={selected('/')}><Link to='/' className='nav-link'>Home</Link></li>
             <li className='nav-item' style={ selected('/cart')}><Link to='/cart' className='nav-link'>Cart ({cartCount})</Link></li>
             <li className='nav-item' style={ selected('/orders')}><Link to='/orders' className='nav-link'>Orders ({orders.length ? orders.length : 0})</Link></li>
+            {
+              this.props.user.id ? <button>Logout</button> :
+            <li className='nav-item' ><Link to='/login' className='nav-link'>Login</Link></li>
+            }
           </ul>
           <div className='container'>
             <div className='panel panel-success'>
@@ -31,7 +36,7 @@ class Nav extends Component {
                 {soldItems} sold!
               </div>
             </div>
-            <button className='btn btn-warning'>Reset</button>
+            <button onClick={reset} className='btn btn-warning'>Reset</button>
           </div>
         </div>
 
@@ -39,7 +44,7 @@ class Nav extends Component {
 
 };
 
-const mapStateToProps = ({orders}) => {
+const mapStateToProps = ({orders, user}) => {
   const cart = orders.filter(order => order.status === 'CART')[0]
   let cartCount = 0
   if(cart) {
@@ -54,8 +59,16 @@ const mapStateToProps = ({orders}) => {
   return {
     cartCount,
     soldItems,
-    orders: orders.filter(order => order.status === 'ORDER')
+    orders: orders.filter(order => order.status === 'ORDER'),
+    user
   }
 }
 
-export default connect(mapStateToProps)(Nav)
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    reset: () => dispatch(reset())
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Nav)
